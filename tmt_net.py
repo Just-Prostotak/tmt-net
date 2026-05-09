@@ -1,11 +1,7 @@
 """
-TMT-Net v20.0 - ПОЛНАЯ ФИЗИЧЕСКАЯ ТЕОРИЯ
-Законы мира в одной нейросети:
-1. Сохранение энергии (работа/тепло)
-2. Энтропия и хаос (случайность)
-3. Релятивизм (время течет по-разному)
-4. Гравитация (нейроны притягиваются)
-5. Пространство-время (координаты + время)
+TMT-Net v24.0 - ЧИСТАЯ ФИЗИКА
+Без dt, без friction, без v_w
+Только: время, масса, действие
 """
 
 import numpy as np
@@ -13,74 +9,54 @@ import numpy as np
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
+# Данные XOR
 X = np.array([[0,0], [0,1], [1,0], [1,1]])
 y = np.array([[0], [1], [1], [0]])
 
+# Инициализация
 np.random.seed(42)
 n_neurons = 8
-pos = np.random.randn(n_neurons, 2) * 2
-
 w1 = np.random.randn(2, n_neurons) * 0.5
 b1 = np.zeros(n_neurons)
 w2 = np.random.randn(n_neurons, 1) * 0.5
 b2 = np.zeros(1)
 
-# Физические переменные
+# TMT — ТОЛЬКО ВРЕМЯ И ДЕЙСТВИЕ
 global_time = 0.0
-time_per_neuron = np.zeros((n_neurons, 1))  # РЕЛЯТИВИЗМ: у каждого свое время
-v_w1 = np.zeros_like(w1)
-v_w2 = np.zeros_like(w2)
-
-m = 1.0
-dt = 0.5
-friction = 0.95
-TIME_LIMIT = 1000.0
-G = 0.1
-
-# ЭНТРОПИЯ: уровень хаоса
-entropy_level = 0.0
-energy_total = 0.0  # СОХРАНЕНИЕ ЭНЕРГИИ
+horizon = 1000.0
+memory = []  # черная дыра (память)
 
 print("="*70)
-print("TMT-Net v20.0 - ПОЛНАЯ ФИЗИЧЕСКАЯ ТЕОРИЯ")
-print("Законы: Сохранение+Энтропия+Релятивизм+Гравитация")
+print("TMT-Net v24.0 - ЧИСТАЯ ФИЗИКА")
+print("Без dt, friction, v_w. Только t = A")
 print("="*70)
 
 for epoch in range(300):
-    # РЕЛЯТИВИЗМ: у каждого нейрона свое время
-    # Нейроны с большим весом имеют замедленное время
-    for i in range(n_neurons):
-        mass_neuron = np.abs(w1[:, i]).mean()
-        time_per_neuron[i] += mass_neuron * dt * 0.1
-        # Замедление времени от массы (как в ОТО)
-        time_dilation = 1 / (1 + mass_neuron)
-    
-    # Forward с учетом релятивистского времени
+    # Forward
     z1 = X @ w1 + b1
     a1 = sigmoid(z1)
     z2 = a1 @ w2 + b2
     a2 = sigmoid(z2)
     
-    # ДЕЙСТВИЕ накапливается глобально
-    action = (np.sum(np.abs(z1)) + np.sum(np.abs(z2))) / 8
+    # ЗАКОН 0: t = A (Время = Действие)
+    mass1 = np.mean(np.abs(w1)) + 0.1
+    mass2 = np.mean(np.abs(w2)) + 0.1
+    action = (np.sum(np.abs(z1)) * mass1 + np.sum(np.abs(z2)) * mass2) / 8
     global_time += action
     
-    # СОХРАНЕНИЕ ЭНЕРГИИ: полная энергия системы
-    kinetic = (np.sum(v_w1**2) + np.sum(v_w2**2)) * 0.5 * m
-    potential = np.sum(np.abs(w1)) + np.sum(np.abs(w2))
-    energy_old = energy_total
-    energy_total = kinetic + potential
-    energy_delta = energy_total - energy_old
+    # ЗАКОН 1: Инерция времени (опыт ускоряет)
+    speed = 1 + min(3.0, global_time / 50)
     
-    # ЭНТРОПИЯ (хаос) растет от потерь энергии
-    entropy_level += np.abs(energy_delta) * 0.001
-    # Добавляем хаос в обучение (термостат)
-    chaos = np.random.randn(*w1.shape) * entropy_level * 0.01
+    # ЗАКОН 3: Горизонт событий (коллапс)
+    if global_time >= horizon:
+        print(f"  🕳️ КОЛЛАПС на эпохе {epoch}")
+        memory.append(w1.copy())  # Закон 7: черная дыра
+        w1 += np.random.randn(*w1.shape) * 0.05  # Закон 4: излучение
+        w2 += np.random.randn(*w2.shape) * 0.05
+        global_time = 0
     
-    # Скорость от времени (с учетом релятивистского замедления)
-    speed_base = 1 + min(3.0, global_time / 50)
-    # Чем выше энтропия, тем медленнее обучение (хаос тормозит)
-    speed = speed_base / (1 + entropy_level)
+    # Loss
+    loss = np.mean(-y * np.log(a2 + 1e-8) - (1-y) * np.log(1-a2 + 1e-8))
     
     # Градиенты
     dz2 = a2 - y
@@ -91,41 +67,18 @@ for epoch in range(300):
     dw1 = (X.T @ dz1) / 4
     db1 = np.sum(dz1, axis=0) / 4
     
-    # ГРАВИТАЦИЯ между нейронами
-    gravity_force = np.zeros_like(w1)
-    for i in range(n_neurons):
-        for j in range(n_neurons):
-            if i != j:
-                mass_i = np.abs(w1[:, i]).mean()
-                mass_j = np.abs(w1[:, j]).mean()
-                dist = np.linalg.norm(pos[i] - pos[j]) + 0.1
-                force = G * mass_i * mass_j / dist**2
-                direction = (pos[j] - pos[i]) / dist
-                gravity_force[:, i] += direction * force * 0.01
-    
-    # Физика с учетом хаоса и гравитации
-    a_w1 = (-dw1 * speed + gravity_force + chaos) / m
-    a_w2 = (-dw2 * speed) / m
-    
-    v_w1 += a_w1 * dt
-    v_w2 += a_w2 * dt
-    
-    v_w1 *= friction
-    v_w2 *= friction
-    
-    w1 += v_w1 * dt
-    w2 += v_w2 * dt
-    b1 -= db1 * speed * dt
-    b2 -= db2 * speed * dt
-    
-    loss = np.mean(-y * np.log(a2 + 1e-8) - (1-y) * np.log(1-a2 + 1e-8))
+    # ЗАКОН 6: Принцип Ферма (минимальный путь)
+    # Обновление без dt, без friction, без v_w — только градиент!
+    w2 -= speed * dw2
+    b2 -= speed * db2
+    w1 -= speed * dw1
+    b1 -= speed * db1
     
     if epoch % 50 == 0:
         pred = (a2 > 0.5).astype(int).flatten()
         acc = (pred == y.flatten()).mean() * 100
         print(f"Эпоха {epoch:3d} | Loss: {loss:.6f} | Acc: {acc:.0f}% | "
-              f"Время: {global_time:.0f} | Энтропия: {entropy_level:.3f} | "
-              f"Энергия: {energy_total:.2f}")
+              f"Время: {global_time:.0f} | Скорость: {speed:.2f}x")
 
 print("\n" + "="*70)
 print("РЕЗУЛЬТАТЫ XOR:")
@@ -140,17 +93,12 @@ for i in range(4):
 print(f"\nТочность: {(pred == y.flatten()).mean() * 100:.0f}%")
 
 print("\n" + "="*70)
-print("ВСЕ ЗАКОНЫ ФИЗИКИ В TMT v20.0:")
+print("ЧИСТАЯ ФИЗИКА TMT v24.0:")
 print("="*70)
-print("✅ 1. СОХРАНЕНИЕ ЭНЕРГИИ: E = кинетическая + потенциальная")
-print("✅ 2. ЭНТРОПИЯ: хаос растет, скорость падает")
-print("✅ 3. РЕЛЯТИВИЗМ: у каждого нейрона свое время")
-print("✅ 4. ГРАВИТАЦИЯ: F = G*m1*m2/r²")
-print("✅ 5. НЬЮТОН: F = m*a")
-print("✅ 6. ИНЕРЦИЯ: v = v + a*dt")
-print("✅ 7. ТРЕНИЕ: v = v * 0.95")
-print("✅ 8. ВРЕМЯ = ДЕЙСТВИЕ: t = t + action")
-print("✅ 9. ЧЕРНАЯ ДЫРА: предел накопления")
-print("✅ 10. ИЗЛУЧЕНИЕ ХОКИНГА: квантовые флуктуации")
+print("✅ dt = 1 (квант действия)")
+print("✅ friction не нужен (энтропия в коллапсе)")
+print("✅ v_w не нужен (импульс не обязателен)")
+print("✅ Только: время, масса, градиент")
+print(f"✅ Коллапсов: {len(memory)}")
 print("="*70)
 input("\nНажми Enter...")
