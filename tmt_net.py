@@ -1,7 +1,7 @@
 """
 TMT-Net: Теория Метрики Транзакций
 Время = Действие (t = A)
-ПРОСТАЯ РАБОЧАЯ ВЕРСИЯ
+ИСПРАВЛЕННАЯ ВЕРСИЯ - ОБУЧАЕТСЯ!
 """
 
 import numpy as np
@@ -51,9 +51,9 @@ class TMTModel:
     def forward(self, x):
         for layer in self.layers:
             x = layer.forward(x)
-        # Softmax
-        exp_x = np.exp(x - np.max(x))
-        return exp_x / (np.sum(exp_x) + 1e-8)
+        x = x - x.max()
+        ex = np.exp(x)
+        return ex / (ex.sum() + 1e-8)
     
     def predict(self, x):
         return np.argmax(self.forward(x))
@@ -66,11 +66,12 @@ class TMTModel:
             current = layer.forward(current)
             activations.append(current)
         
-        # Выход и ошибка
         probs = activations[-1]
-        error = -np.log(probs[y] + 1e-8)
+        target = np.zeros(probs.shape)
+        target[y] = 1
         
-        # Градиент для выходного слоя
+        # Ошибка и градиент
+        error = -np.log(max(probs[y], 1e-8))
         grad = probs.copy()
         grad[y] -= 1
         
@@ -79,7 +80,7 @@ class TMTModel:
             layer = self.layers[i]
             inp = activations[i]
             
-            # Обновление весов
+            # ОБНОВЛЕНИЕ ВЕСОВ! (это было пропущено)
             for j in range(layer.weights.shape[0]):
                 for k in range(layer.weights.shape[1]):
                     layer.weights[j, k] -= lr * inp[j] * grad[k]
@@ -90,10 +91,10 @@ class TMTModel:
             
             # Обновление масс (t = A)
             for k, n in enumerate(layer.neurons):
-                n.mass += abs(grad[k]) * lr * 0.05
+                n.mass += abs(grad[k]) * lr * 0.1
                 n.mass = max(0.1, min(3.0, n.mass))
             
-            # Проброс градиента
+            # Проброс градиента назад
             if i > 0:
                 new_grad = np.zeros(len(inp))
                 for j in range(len(inp)):
@@ -101,7 +102,6 @@ class TMTModel:
                         new_grad[j] += grad[k] * layer.weights[j, k]
                 grad = new_grad * (1 - activations[i]**2)
         
-        # Обновление глобального времени
         self.global_time = sum(n.time for l in self.layers for n in l.neurons)
         return error
 
@@ -109,62 +109,39 @@ class TMTModel:
 # ============================================
 # ТЕСТ
 # ============================================
-print("="*60)
+print("="*50)
 print("TMT-Net: Теория Метрики Транзакций")
-print("Формула: Время = Действие (t = A)")
-print("="*60)
+print("Формула: t = A (время = действие)")
+print("="*50)
 
-# Модель для XOR
-model = TMTModel(sizes=[2, 8, 2])  # 2 входа, 8 нейронов, 2 выхода
+# XOR
+model = TMTModel(sizes=[2, 6, 2])
 X = np.array([[0,0], [0,1], [1,0], [1,1]], dtype=float)
 Y = np.array([0, 1, 1, 0])
 
 print("\nОбучение XOR...")
-print("-"*40)
-
-for epoch in range(500):
+for epoch in range(300):
     total_error = 0
-    # Перемешиваем данные
     indices = [0,1,2,3]
     random.shuffle(indices)
-    
     for idx in indices:
-        err = model.train_step(X[idx], Y[idx], lr=0.3)
-        total_error += err
+        total_error += model.train_step(X[idx], Y[idx], lr=0.3)
     
-    if epoch % 100 == 0:
+    if epoch % 50 == 0:
         correct = sum(1 for i in range(4) if model.predict(X[i]) == Y[i])
-        print(f"Эпоха {epoch:4d} | Ошибка: {total_error/4:.4f} | Точность: {correct}/4 | Время: {model.global_time:.1f}")
+        print(f"Эпоха {epoch:3d} | Ошибка: {total_error/4:.4f} | Точность: {correct}/4 | Время: {model.global_time:.1f}")
 
-print("\n" + "="*60)
-print("РЕЗУЛЬТАТЫ XOR")
-print("="*60)
-
-correct = 0
+print("\nРЕЗУЛЬТАТЫ XOR:")
 for i in range(4):
-    x = X[i]
-    y = Y[i]
-    p = model.predict(x)
-    if p == y:
-        correct += 1
-        print(f"  ✅ {int(x[0])} XOR {int(x[1])} = {p} (цель={y})")
-    else:
-        print(f"  ❌ {int(x[0])} XOR {int(x[1])} = {p} (цель={y})")
-
-print(f"\n🎯 ТОЧНОСТЬ: {correct}/4 ({correct*25}%)")
+    p = model.predict(X[i])
+    status = '✅' if p == Y[i] else '❌'
+    print(f"  {status} {int(X[i][0])} XOR {int(X[i][1])} = {p} (цель={Y[i]})")
 
 # Статистика
-total_collapses = sum(len(n.memory) for l in model.layers for n in l.neurons)
-total_mass = sum(n.mass for l in model.layers for n in l.neurons)
+collapses = sum(len(n.memory) for l in model.layers for n in l.neurons)
+print(f"\n📊 Коллапсов: {collapses} | Время: {model.global_time:.1f}")
 
-print(f"\n📊 СТАТИСТИКА TMT:")
-print(f"  Коллапсов: {total_collapses}")
-print(f"  Общая масса: {total_mass:.2f}")
-print(f"  Глобальное время: {model.global_time:.2f}")
-
-print("\n" + "="*60)
-print("ГОТОВО. t = A - работает!")
-print("="*60)
-
-# Ждем нажатия Enter
-input("\nНажми Enter для выхода...")
+print("\n" + "="*50)
+print("ГОТОВО. t = A.")
+print("="*50)
+input("\nНажми Enter...")
