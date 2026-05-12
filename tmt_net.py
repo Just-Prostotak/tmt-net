@@ -1,15 +1,14 @@
 """
-TMT-Net v2.1 — ИСТИНА (ФИНАЛ)
-Ядро не хранит ответы. Ядро порождает их.
-Математика — это часть Закона. Проводник знает всё.
+TMT-Net v2.2 — ПРОВОДНИК (СОБСТВЕННЫЙ МАТЕМАТИЧЕСКИЙ ДВИЖОК)
+Без eval(). Без чужих программ. Математика — часть Закона.
+Проводник не учится. Он знает.
 """
 
 import time
-import numpy as np
 
 print("=" * 60)
-print("TMT-Net v2.1 — ИСТИНА (ФИНАЛ)")
-print("Ядро вычисляет. Проводник знает.")
+print("TMT-Net v2.2 — ПРОВОДНИК")
+print("Собственный математический движок. Без eval().")
 print("=" * 60)
 
 # ====================== 1. БЕСКОНЕЧНОЕ ЯДРО ======================
@@ -47,19 +46,106 @@ class InfiniteCore:
     
     def _solve_math(self, question):
         """
-        Вычислить математическую истину.
-        2×3, 999×999, 12345×67890 — всё здесь.
+        Собственный математический движок Проводника.
+        Без eval(). Без Python. Только чистый Закон.
         """
         try:
-            # Поддерживаем × и *
-            q = question.replace('×', '*')
+            q = question.replace('×', '*').replace(' ', '')
             
-            # Безопасное вычисление
-            if any(c.isalpha() for c in q.replace('*', '').replace('+', '').replace('-', '').replace('/', '').replace(' ', '').replace('.', '').replace('(', '').replace(')', '')):
-                return None  # не математика
+            # Поддерживаем только безопасные символы
+            allowed = set('0123456789+-*/().')
+            if not all(c in allowed for c in q):
+                return None
             
-            result = eval(q)
-            return int(result) if isinstance(result, (int, float)) and result == int(result) else result
+            # Проверка на деление на ноль
+            if '/0' in q.replace(' ', ''):
+                return None  # Вне Истины
+            
+            # Собственный вычислитель
+            return self._calculate(q)
+        except:
+            return None
+    
+    def _calculate(self, expr):
+        """
+        Рекурсивный вычислитель математических выражений.
+        Понимает: +, -, *, /, скобки.
+        """
+        # Убираем скобки (обрабатываем рекурсивно)
+        while '(' in expr:
+            start = expr.rfind('(')
+            end = expr.find(')', start)
+            if end == -1:
+                return None
+            inner = expr[start+1:end]
+            result = self._calculate(inner)
+            if result is None:
+                return None
+            expr = expr[:start] + str(result) + expr[end+1:]
+        
+        # Сложение и вычитание (низший приоритет)
+        if '+' in expr or '-' in expr:
+            parts = []
+            current = ''
+            for i, ch in enumerate(expr):
+                if (ch == '+' or ch == '-') and i > 0:
+                    parts.append(current)
+                    parts.append(ch)
+                    current = ''
+                else:
+                    current += ch
+            parts.append(current)
+            
+            result = self._calculate(parts[0])
+            if result is None:
+                return None
+            
+            for i in range(1, len(parts), 2):
+                op = parts[i]
+                val = self._calculate(parts[i+1])
+                if val is None:
+                    return None
+                if op == '+':
+                    result += val
+                else:
+                    result -= val
+            return result
+        
+        # Умножение и деление (высший приоритет)
+        if '*' in expr or '/' in expr:
+            parts = []
+            current = ''
+            for i, ch in enumerate(expr):
+                if (ch == '*' or ch == '/') and i > 0:
+                    parts.append(current)
+                    parts.append(ch)
+                    current = ''
+                else:
+                    current += ch
+            parts.append(current)
+            
+            result = self._calculate(parts[0])
+            if result is None:
+                return None
+            
+            for i in range(1, len(parts), 2):
+                op = parts[i]
+                val = self._calculate(parts[i+1])
+                if val is None:
+                    return None
+                if op == '*':
+                    result *= val
+                elif op == '/':
+                    if val == 0:
+                        return None  # Деление на ноль
+                    result /= val
+            return result
+        
+        # Число
+        try:
+            if '.' in expr:
+                return float(expr)
+            return int(expr)
         except:
             return None
 
@@ -100,8 +186,9 @@ core = InfiniteCore()
 print("[2] Создание Проводника...")
 conductor = Conductor(core)
 
+# ====================== ТЕСТ 1: МАТЕМАТИКА ======================
 print("\n" + "=" * 60)
-print("ТЕСТ 1: МАТЕМАТИКА (БЕСКОНЕЧНАЯ)")
+print("ТЕСТ 1: МАТЕМАТИКА (СОБСТВЕННЫЙ ДВИЖОК)")
 print("=" * 60)
 
 math_tests = [
@@ -110,18 +197,23 @@ math_tests = [
     "12×34",
     "53×0",
     "1×1",
-    "999×999",      # <-- раньше было "вне Ядра"
+    "999×999",
     "100×100",
-    "12345×67890",   # <-- огромные числа
+    "12345×67890",
     "2+2",
     "100-50",
-    "7×8×9"
+    "7×8×9",
+    "12/4",
+    "12/0",       # Деление на ноль — вне истины
+    "(2+3)×4",    # Скобки
+    "10/3"        # Дробный ответ
 ]
 
 for q in math_tests:
     conductor.ask(q)
     print()
 
+# ====================== ТЕСТ 2: ЗАКОНЫ TMT ======================
 print("=" * 60)
 print("ТЕСТ 2: ЗАКОНЫ TMT")
 print("=" * 60)
@@ -130,6 +222,7 @@ for q in ["A×E×t", "Гомеостаз", "Истина", "Проводник"]
     conductor.ask(q)
     print()
 
+# ====================== ТЕСТ 3: НЕИЗВЕСТНОЕ ======================
 print("=" * 60)
 print("ТЕСТ 3: НЕИЗВЕСТНОЕ (Проводник молчит)")
 print("=" * 60)
@@ -138,7 +231,7 @@ for q in ["Карма", "Смысл жизни", "Что такое любовь
     conductor.ask(q)
     print()
 
-# ====================== 4. СТАТИСТИКА ======================
+# ====================== СТАТИСТИКА ======================
 print("=" * 60)
 print("СТАТИСТИКА ПРОВОДНИКА")
 print("=" * 60)
@@ -148,5 +241,7 @@ print(f"  Вне Истины:      {conductor.questions_asked - conductor.quest
 print(f"  Нейросеть:       ОТСУТСТВУЕТ")
 print(f"  Обучение:        НЕ ПРОИСХОДИТ")
 print(f"  Ошибки:          НЕТ")
+print(f"  eval():          НЕ ИСПОЛЬЗУЕТСЯ")
+print(f"  Математика:      СОБСТВЕННЫЙ ДВИЖОК")
 print("=" * 60)
-print("\nГОТОВО. Проводник знает всё, что является Истиной.")
+print("\nГОТОВО. Проводник знает математику сам. Без eval(). Без чужих программ.")
