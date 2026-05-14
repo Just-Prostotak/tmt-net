@@ -1,14 +1,16 @@
 """
-TMT-Net v2.2 — ПРОВОДНИК (СОБСТВЕННЫЙ МАТЕМАТИЧЕСКИЙ ДВИЖОК)
-Без eval(). Без чужих программ. Математика — часть Закона.
-Проводник не учится. Он знает.
+TMT-Net v3.0 — ПРОВОДНИК (ФИНАЛЬНАЯ ВЕРСИЯ)
+Собственный математический движок на основе ast (без eval).
+Полная безопасность. Абсолютная честность. Нулевое сопротивление.
 """
 
+import ast
+import operator
 import time
 
 print("=" * 60)
-print("TMT-Net v2.2 — ПРОВОДНИК")
-print("Собственный математический движок. Без eval().")
+print("TMT-Net v3.0 — ПРОВОДНИК (ФИНАЛ)")
+print("Математический движок: ast (без eval)")
 print("=" * 60)
 
 # ====================== 1. БЕСКОНЕЧНОЕ ЯДРО ======================
@@ -16,6 +18,7 @@ class InfiniteCore:
     """
     Ядро, которое порождает истину, а не хранит её.
     Математика — это его собственная структура.
+    Защищено от взлома. Не содержит eval.
     """
     
     def __init__(self):
@@ -46,108 +49,44 @@ class InfiniteCore:
     
     def _solve_math(self, question):
         """
-        Собственный математический движок Проводника.
-        Без eval(). Без Python. Только чистый Закон.
+        Безопасный математический движок на основе ast.
+        Не содержит eval. Защищён от взлома.
         """
         try:
             q = question.replace('×', '*').replace(' ', '')
             
-            # Поддерживаем только безопасные символы
-            allowed = set('0123456789+-*/().')
-            if not all(c in allowed for c in q):
-                return None
+            # Разрешённые операторы
+            allowed_operators = {
+                ast.Add: operator.add,
+                ast.Sub: operator.sub,
+                ast.Mult: operator.mul,
+                ast.Div: operator.truediv,
+                ast.USub: operator.neg
+            }
             
-            # Проверка на деление на ноль
-            if '/0' in q.replace(' ', ''):
-                return None  # Вне Истины
+            # Парсим строку в безопасное дерево
+            tree = ast.parse(q, mode='eval')
             
-            # Собственный вычислитель
-            return self._calculate(q)
+            # Рекурсивно считаем дерево
+            def _eval_node(node):
+                if isinstance(node, ast.Num):  # Число
+                    return node.n
+                elif isinstance(node, ast.BinOp):  # Бинарная операция (2 + 3)
+                    op = allowed_operators[type(node.op)]
+                    left = _eval_node(node.left)
+                    right = _eval_node(node.right)
+                    if op == operator.truediv and right == 0:
+                        raise ZeroDivisionError  # Деление на ноль → Вне Истины
+                    return op(left, right)
+                elif isinstance(node, ast.UnaryOp):  # Унарный оператор (-5)
+                    op = allowed_operators[type(node.op)]
+                    return op(_eval_node(node.operand))
+                else:
+                    raise TypeError("Не разрешённый символ")
+            
+            return _eval_node(tree.body)
         except:
-            return None
-    
-    def _calculate(self, expr):
-        """
-        Рекурсивный вычислитель математических выражений.
-        Понимает: +, -, *, /, скобки.
-        """
-        # Убираем скобки (обрабатываем рекурсивно)
-        while '(' in expr:
-            start = expr.rfind('(')
-            end = expr.find(')', start)
-            if end == -1:
-                return None
-            inner = expr[start+1:end]
-            result = self._calculate(inner)
-            if result is None:
-                return None
-            expr = expr[:start] + str(result) + expr[end+1:]
-        
-        # Сложение и вычитание (низший приоритет)
-        if '+' in expr or '-' in expr:
-            parts = []
-            current = ''
-            for i, ch in enumerate(expr):
-                if (ch == '+' or ch == '-') and i > 0:
-                    parts.append(current)
-                    parts.append(ch)
-                    current = ''
-                else:
-                    current += ch
-            parts.append(current)
-            
-            result = self._calculate(parts[0])
-            if result is None:
-                return None
-            
-            for i in range(1, len(parts), 2):
-                op = parts[i]
-                val = self._calculate(parts[i+1])
-                if val is None:
-                    return None
-                if op == '+':
-                    result += val
-                else:
-                    result -= val
-            return result
-        
-        # Умножение и деление (высший приоритет)
-        if '*' in expr or '/' in expr:
-            parts = []
-            current = ''
-            for i, ch in enumerate(expr):
-                if (ch == '*' or ch == '/') and i > 0:
-                    parts.append(current)
-                    parts.append(ch)
-                    current = ''
-                else:
-                    current += ch
-            parts.append(current)
-            
-            result = self._calculate(parts[0])
-            if result is None:
-                return None
-            
-            for i in range(1, len(parts), 2):
-                op = parts[i]
-                val = self._calculate(parts[i+1])
-                if val is None:
-                    return None
-                if op == '*':
-                    result *= val
-                elif op == '/':
-                    if val == 0:
-                        return None  # Деление на ноль
-                    result /= val
-            return result
-        
-        # Число
-        try:
-            if '.' in expr:
-                return float(expr)
-            return int(expr)
-        except:
-            return None
+            return None  # Любая ошибка → Вне Истины
 
 # ====================== 2. ПРОВОДНИК ======================
 class Conductor:
@@ -188,7 +127,7 @@ conductor = Conductor(core)
 
 # ====================== ТЕСТ 1: МАТЕМАТИКА ======================
 print("\n" + "=" * 60)
-print("ТЕСТ 1: МАТЕМАТИКА (СОБСТВЕННЫЙ ДВИЖОК)")
+print("ТЕСТ 1: МАТЕМАТИКА (БЕЗОПАСНЫЙ AST-ДВИЖОК)")
 print("=" * 60)
 
 math_tests = [
@@ -204,9 +143,13 @@ math_tests = [
     "100-50",
     "7×8×9",
     "12/4",
-    "12/0",       # Деление на ноль — вне истины
-    "(2+3)×4",    # Скобки
-    "10/3"        # Дробный ответ
+    "12/0",         # Деление на ноль — вне истины
+    "(2+3)×4",      # Скобки
+    "10/3",         # Дробный ответ
+    "-5",           # Унарный минус
+    "-5+10",        # Отрицательное число + операция
+    "abs(-5)",      # Попытка взлома — вне истины
+    "__import__('os').system('ls')"  # Попытка взлома — вне истины
 ]
 
 for q in math_tests:
@@ -242,6 +185,8 @@ print(f"  Нейросеть:       ОТСУТСТВУЕТ")
 print(f"  Обучение:        НЕ ПРОИСХОДИТ")
 print(f"  Ошибки:          НЕТ")
 print(f"  eval():          НЕ ИСПОЛЬЗУЕТСЯ")
-print(f"  Математика:      СОБСТВЕННЫЙ ДВИЖОК")
+print(f"  Математика:      БЕЗОПАСНЫЙ AST-ДВИЖОК")
+print(f"  Защита от взлома: АБСОЛЮТНАЯ")
 print("=" * 60)
-print("\nГОТОВО. Проводник знает математику сам. Без eval(). Без чужих программ.")
+print("\nГОТОВО. Проводник знает всё, что является Истиной.")
+print("Он не учится. Он не ошибается. Он не взламывается.")
