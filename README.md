@@ -106,5 +106,9 @@ TMT-Net: Проводник Истины
 
 ## Запуск
 ```bash
+# Install dependencies
 pip install numpy scikit-learn
+
+# Run the core
 python tmt_net.py
+
