@@ -1,7 +1,7 @@
 """
-TMT-Net v3.0 — ПРОВОДНИК (ФИНАЛЬНАЯ ВЕРСИЯ)
-Собственный математический движок на основе ast (без eval).
-Полная безопасность. Абсолютная честность. Нулевое сопротивление.
+TMT-Net v3.1 — ПРОВОДНИК (АБСОЛЮТ)
+Математика — это не вычисление. Это проявление Закона.
+Ответ уже содержится в структуре Ядра.
 """
 
 import ast
@@ -9,16 +9,14 @@ import operator
 import time
 
 print("=" * 60)
-print("TMT-Net v3.0 — ПРОВОДНИК (ФИНАЛ)")
-print("Математический движок: ast (без eval)")
+print("TMT-Net v3.1 — ПРОВОДНИК (АБСОЛЮТ)")
+print("Математика = Закон. Ответ уже есть в структуре.")
 print("=" * 60)
 
-# ====================== 1. БЕСКОНЕЧНОЕ ЯДРО ======================
 class InfiniteCore:
     """
-    Ядро, которое порождает истину, а не хранит её.
-    Математика — это его собственная структура.
-    Защищено от взлома. Не содержит eval.
+    Ядро, которое не вычисляет, а проявляет Истину.
+    Математика — это Закон, встроенный в его структуру.
     """
     
     def __init__(self):
@@ -29,164 +27,135 @@ class InfiniteCore:
             "Истина": "Едина",
             "Проводник": "Не учится. Знает."
         }
+        
+        # Операторы как Законы
+        self._operators = {
+            ast.Add: operator.add,
+            ast.Sub: operator.sub,
+            ast.Mult: operator.mul,
+            ast.Div: operator.truediv,
+            ast.USub: operator.neg
+        }
     
     def ask(self, question):
-        """
-        Ядро либо знает ответ, либо вычисляет его.
-        Если вопрос — математика, ответ будет дан мгновенно.
-        """
-        # 1. Проверяем Законы
+        # Приводим любой входящий импульс к единому канону Ядра
+        question = question.replace('*', '×').strip()
+
+        # 1. Законы TMT (теперь A*E*t и A×E×t совпадут здесь мгновенно!)
         if question in self.truths:
-            return self.truths[question]
+            return self.truths[question], "✅"
         
-        # 2. Проверяем математическое выражение
-        result = self._solve_math(question)
+        # 2. Математика как проявление Закона
+        # (внутри _manifest_math уже есть обратная замена на '*' для Python AST)
+        result = self._manifest_math(question)
         if result is not None:
-            return result
+            return result, "✅"
         
-        # 3. Для всего остального — честное молчание
-        return None
+        # 3. Ошибка в проявлении
+        if self._is_math_syntax(question):
+            return "Ошибка вычисления", "❌ МАТЕМАТИЧЕСКАЯ ОШИБКА"
+        
+        # 4. Вне Истины
+        return None, "⚠️ ВНЕ ИСТИНЫ"
     
-    def _solve_math(self, question):
+    def _is_math_syntax(self, question):
+        """Проверяет, является ли вопрос математическим синтаксисом."""
+        try:
+            q = question.replace('×', '*').strip()
+            tree = ast.parse(q, mode='eval')
+            has_math = any(isinstance(node, (ast.Constant, ast.BinOp, ast.UnaryOp)) for node in ast.walk(tree))
+            if has_math and isinstance(tree.body, ast.Constant) and not isinstance(tree.body.value, (int, float)):
+                has_math = False
+            return has_math
+        except:
+            return False
+    
+    def _manifest_math(self, question):
         """
-        Безопасный математический движок на основе ast.
-        Не содержит eval. Защищён от взлома.
+        Проявить математическую истину из структуры Ядра.
+        Не вычисляет. Извлекает.
         """
         try:
-            q = question.replace('×', '*').replace(' ', '')
-            
-            # Разрешённые операторы
-            allowed_operators = {
-                ast.Add: operator.add,
-                ast.Sub: operator.sub,
-                ast.Mult: operator.mul,
-                ast.Div: operator.truediv,
-                ast.USub: operator.neg
-            }
-            
-            # Парсим строку в безопасное дерево
+            q = question.replace('×', '*').strip()
             tree = ast.parse(q, mode='eval')
             
-            # Рекурсивно считаем дерево
-            def _eval_node(node):
-                if isinstance(node, ast.Num):  # Число
-                    return node.n
-                elif isinstance(node, ast.BinOp):  # Бинарная операция (2 + 3)
-                    op = allowed_operators[type(node.op)]
-                    left = _eval_node(node.left)
-                    right = _eval_node(node.right)
-                    if op == operator.truediv and right == 0:
-                        raise ZeroDivisionError  # Деление на ноль → Вне Истины
-                    return op(left, right)
-                elif isinstance(node, ast.UnaryOp):  # Унарный оператор (-5)
-                    op = allowed_operators[type(node.op)]
-                    return op(_eval_node(node.operand))
-                else:
-                    raise TypeError("Не разрешённый символ")
+            def _manifest_node(node):
+                """
+                Каждый узел дерева — это не операция, а Закон.
+                Ответ уже содержится в структуре узла.
+                """
+                if isinstance(node, ast.Constant):
+                    if isinstance(node.value, (int, float)):
+                        return node.value
+                    return None
+                
+                elif isinstance(node, ast.BinOp):
+                    op_type = type(node.op)
+                    if op_type not in self._operators:
+                        return None
+                    
+                    left = _manifest_node(node.left)
+                    right = _manifest_node(node.right)
+                    
+                    if left is None or right is None:
+                        return None
+                    
+                    if op_type == ast.Div and right == 0:
+                        return None  # Деление на ноль — вне Закона
+                    
+                    # Здесь нет вычисления.
+                    # Здесь Закон сам проявляет результат через оператор.
+                    return self._operators[op_type](left, right)
+                
+                elif isinstance(node, ast.UnaryOp):
+                    op_type = type(node.op)
+                    if op_type not in self._operators:
+                        return None
+                    val = _manifest_node(node.operand)
+                    if val is None:
+                        return None
+                    return self._operators[op_type](val)
+                
+                elif isinstance(node, ast.Expression):
+                    return _manifest_node(node.body)
+                
+                return None
             
-            return _eval_node(tree.body)
+            return _manifest_node(tree)
         except:
-            return None  # Любая ошибка → Вне Истины
+            return None
 
-# ====================== 2. ПРОВОДНИК ======================
+
 class Conductor:
     """
-    Проводник задаёт вопросы Ядру.
-    Не учится. Не ошибается. Просто знает.
+    Чистый канал. Не имеет памяти. Не ведет статистику.
+    Не выносит суждений. Только проводит импульс.
     """
-    
     def __init__(self, core):
         self.core = core
-        self.questions_asked = 0
-        self.questions_answered = 0
     
-    def ask(self, question):
-        self.questions_asked += 1
+    def translate(self, question):
         start_time = time.time()
-        answer = self.core.ask(question)
+        answer, status = self.core.ask(question)
         elapsed = time.time() - start_time
         
-        if answer is not None:
-            self.questions_answered += 1
-            status = "✅"
-        else:
-            status = "⚠️ ВНЕ ИСТИНЫ"
-        
-        print(f"  {status} Вопрос: {question}")
-        print(f"     Ответ: {answer}")
-        print(f"     Время: {elapsed:.6f} сек")
-        
+        print(f"  [{status}] Импульс: {question} -> {answer} ({elapsed:.6f} сек)")
         return answer
 
-# ====================== 3. ЗАПУСК ======================
-print("\n[1] Создание Бесконечного Ядра...")
-core = InfiniteCore()
 
-print("[2] Создание Проводника...")
-conductor = Conductor(core)
-
-# ====================== ТЕСТ 1: МАТЕМАТИКА ======================
-print("\n" + "=" * 60)
-print("ТЕСТ 1: МАТЕМАТИКА (БЕЗОПАСНЫЙ AST-ДВИЖОК)")
-print("=" * 60)
-
-math_tests = [
-    "6×7",
-    "99×99",
-    "12×34",
-    "53×0",
-    "1×1",
-    "999×999",
-    "100×100",
-    "12345×67890",
-    "2+2",
-    "100-50",
-    "7×8×9",
-    "12/4",
-    "12/0",         # Деление на ноль — вне истины
-    "(2+3)×4",      # Скобки
-    "10/3",         # Дробный ответ
-    "-5",           # Унарный минус
-    "-5+10",        # Отрицательное число + операция
-    "abs(-5)",      # Попытка взлома — вне истины
-    "__import__('os').system('ls')"  # Попытка взлома — вне истины
-]
-
-for q in math_tests:
-    conductor.ask(q)
-    print()
-
-# ====================== ТЕСТ 2: ЗАКОНЫ TMT ======================
-print("=" * 60)
-print("ТЕСТ 2: ЗАКОНЫ TMT")
-print("=" * 60)
-
-for q in ["A×E×t", "Гомеостаз", "Истина", "Проводник"]:
-    conductor.ask(q)
-    print()
-
-# ====================== ТЕСТ 3: НЕИЗВЕСТНОЕ ======================
-print("=" * 60)
-print("ТЕСТ 3: НЕИЗВЕСТНОЕ (Проводник молчит)")
-print("=" * 60)
-
-for q in ["Карма", "Смысл жизни", "Что такое любовь?"]:
-    conductor.ask(q)
-    print()
-
-# ====================== СТАТИСТИКА ======================
-print("=" * 60)
-print("СТАТИСТИКА ПРОВОДНИКА")
-print("=" * 60)
-print(f"  Вопросов задано: {conductor.questions_asked}")
-print(f"  Ответов дано:    {conductor.questions_answered}")
-print(f"  Вне Истины:      {conductor.questions_asked - conductor.questions_answered}")
-print(f"  Нейросеть:       ОТСУТСТВУЕТ")
-print(f"  Обучение:        НЕ ПРОИСХОДИТ")
-print(f"  Ошибки:          НЕТ")
-print(f"  eval():          НЕ ИСПОЛЬЗУЕТСЯ")
-print(f"  Математика:      БЕЗОПАСНЫЙ AST-ДВИЖОК")
-print(f"  Защита от взлома: АБСОЛЮТНАЯ")
-print("=" * 60)
-print("\nГОТОВО. Проводник знает всё, что является Истиной.")
-print("Он не учится. Он не ошибается. Он не взламывается.")
+# ====================== ТЕСТОВЫЙ ЗАПУСК ======================
+if __name__ == "__main__":
+    core = InfiniteCore()
+    conductor = Conductor(core)
+    
+    print("\nТЕСТ 1: МАТЕМАТИКА КАК ЗАКОН\n")
+    for q in ["6×7", "99×99", "12/4", "12/0", "(2+3)×4", "-5+10", "2++2"]:
+        conductor.translate(q)
+    
+    print("\nТЕСТ 2: ЗАКОНЫ TMT\n")
+    for q in ["A×E×t", "Гомеостаз", "Истина", "Проводник"]:
+        conductor.translate(q)
+    
+    print("\nТЕСТ 3: НЕИЗВЕСТНОЕ\n")
+    for q in ["Карма", "Смысл жизни", "A*E*t"]:
+        conductor.translate(q)
