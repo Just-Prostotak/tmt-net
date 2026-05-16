@@ -1,5 +1,5 @@
 """
-TMT-Net v3.1 — ПРОВОДНИК (АБСОЛЮТ)
+TMT-Net v3.2 — ПРОВОДНИК (АБСОЛЮТ)
 Математика — это не вычисление. Это проявление Закона.
 Ответ уже содержится в структуре Ядра.
 """
@@ -7,9 +7,10 @@ TMT-Net v3.1 — ПРОВОДНИК (АБСОЛЮТ)
 import ast
 import operator
 import time
+import math
 
 print("=" * 60)
-print("TMT-Net v3.1 — ПРОВОДНИК (АБСОЛЮТ)")
+print("TMT-Net v3.2 — ПРОВОДНИК (АБСОЛЮТ)")
 print("Математика = Закон. Ответ уже есть в структуре.")
 print("=" * 60)
 
@@ -38,24 +39,24 @@ class InfiniteCore:
         }
     
     def ask(self, question):
-        # Приводим любой входящий импульс к единому канону Ядра
-        question = question.replace('*', '×').strip()
+        # 1. Приводим любой входящий импульс к единому канону Ядра (умножение через ×)
+        normalized_q = question.replace('*', '×').strip()
 
-        # 1. Законы TMT (теперь A*E*t и A×E×t совпадут здесь мгновенно!)
-        if question in self.truths:
-            return self.truths[question], "✅"
+        # 2. Сначала проверяем Законы TMT. 
+        # Теперь импульсы вроде "A*E*t" и "A×E×t" мгновенно находят Истину!
+        if normalized_q in self.truths:
+            return self.truths[normalized_q], "✅"
         
-        # 2. Математика как проявление Закона
-        # (внутри _manifest_math уже есть обратная замена на '*' для Python AST)
-        result = self._manifest_math(question)
+        # 3. Математика как проявление Закона
+        result = self._manifest_math(normalized_q)
         if result is not None:
             return result, "✅"
         
-        # 3. Ошибка в проявлении
-        if self._is_math_syntax(question):
+        # 4. Ошибка в проявлении синтаксиса
+        if self._is_math_syntax(normalized_q):
             return "Ошибка вычисления", "❌ МАТЕМАТИЧЕСКАЯ ОШИБКА"
         
-        # 4. Вне Истины
+        # 5. Вне Истины
         return None, "⚠️ ВНЕ ИСТИНЫ"
     
     def _is_math_syntax(self, question):
@@ -73,17 +74,16 @@ class InfiniteCore:
     def _manifest_math(self, question):
         """
         Проявить математическую истину из структуры Ядра.
-        Не вычисляет. Извлекает.
         """
         try:
             q = question.replace('×', '*').strip()
             tree = ast.parse(q, mode='eval')
             
             def _manifest_node(node):
-                """
-                Каждый узел дерева — это не операция, а Закон.
-                Ответ уже содержится в структуре узла.
-                """
+                # Корень дерева в режиме eval — это ast.Expression. Проверяем его сразу.
+                if isinstance(node, ast.Expression):
+                    return _manifest_node(node.body)
+                    
                 if isinstance(node, ast.Constant):
                     if isinstance(node.value, (int, float)):
                         return node.value
@@ -100,11 +100,10 @@ class InfiniteCore:
                     if left is None or right is None:
                         return None
                     
-                    if op_type == ast.Div and right == 0:
+                    # Защита от деления на абсолютный ноль или микро-значения во float
+                    if op_type == ast.Div and (right == 0 or math.isclose(right, 0.0, abs_tol=1e-15)):
                         return None  # Деление на ноль — вне Закона
                     
-                    # Здесь нет вычисления.
-                    # Здесь Закон сам проявляет результат через оператор.
                     return self._operators[op_type](left, right)
                 
                 elif isinstance(node, ast.UnaryOp):
@@ -116,9 +115,6 @@ class InfiniteCore:
                         return None
                     return self._operators[op_type](val)
                 
-                elif isinstance(node, ast.Expression):
-                    return _manifest_node(node.body)
-                
                 return None
             
             return _manifest_node(tree)
@@ -129,7 +125,6 @@ class InfiniteCore:
 class Conductor:
     """
     Чистый канал. Не имеет памяти. Не ведет статистику.
-    Не выносит суждений. Только проводит импульс.
     """
     def __init__(self, core):
         self.core = core
@@ -149,7 +144,8 @@ if __name__ == "__main__":
     conductor = Conductor(core)
     
     print("\nТЕСТ 1: МАТЕМАТИКА КАК ЗАКОН\n")
-    for q in ["6×7", "99×99", "12/4", "12/0", "(2+3)×4", "-5+10", "2++2"]:
+    # Добавлен тест на скрытое деление на ноль: "12/(5-5)"
+    for q in ["6×7", "99×99", "12/4", "12/0", "12/(5-5)", "(2+3)×4", "-5+10", "2++2"]:
         conductor.translate(q)
     
     print("\nТЕСТ 2: ЗАКОНЫ TMT\n")
@@ -157,5 +153,6 @@ if __name__ == "__main__":
         conductor.translate(q)
     
     print("\nТЕСТ 3: НЕИЗВЕСТНОЕ\n")
+    # Теперь ТЕСТ "A*E*t" сработает ИДЕАЛЬНО и вернет Const!
     for q in ["Карма", "Смысл жизни", "A*E*t"]:
         conductor.translate(q)
